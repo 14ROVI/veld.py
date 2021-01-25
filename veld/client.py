@@ -5,6 +5,27 @@ import time
 
 
 
+class Embed:
+    def __init__(self, title:str=None, description:str=None, footer:str=None):
+        self.title = title
+        self.description = description
+        self.footer = footer
+
+    def __str__(self) -> str:
+        return str(self.to_dict())
+
+    def __repr__(self) -> str:
+        return f'<Embed title = "{self.title}", description = "{self.description}">'
+
+    def to_dict(self) -> dict:
+        return {
+            "title": self.title,
+            "description": self.description,
+            "footer": self.footer,
+        }
+
+
+
 class User:
     def __init__(self, id, name, avatar_url, bot, badges, online=None, status=None):
         self.id = id
@@ -59,10 +80,11 @@ class Channel:
     def __repr__(self) -> str:
         return f'<Channel id = {self.id}, name = "{self.name}">'
 
-    async def send(self, content):
+    async def send(self, content=None, embed: Embed = None):
+        embed = None if embed is None else embed.to_dict()
         await self.client.session.post(
             f"https://api.veld.chat/channels/{self.id}/messages",
-            json = {"content": content},
+            json = {"content": content, "embed": embed},
             headers = {"authorization": f"Bearer {self.client.token}"}
         )
 
