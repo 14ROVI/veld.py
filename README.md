@@ -14,6 +14,7 @@ client = veld.VeldChatClient("TOKEN")
 
 @client.event()
 async def on_message(message):
+    message.content = message.content or ""
     if message.content.startswith("?"):
         args = message.content.split()
         
