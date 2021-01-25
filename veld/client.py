@@ -6,17 +6,27 @@ import time
 
 
 class Embed:
-    def __init__(self, title:str=None, description:str=None, footer:str=None):
+    def __init__(self, title:str=None, description:str=None, footer:str=None, color:int=None, colour:int=None, image_url:str=None, thumbnail_url:str=None):
         self.title = title
         self.description = description
         self.footer = footer
+        self.colour = self.color = color or colour
+        self.image_url = image_url
+        self.thumbnail_url = thumbnail_url
+        self.author = {
+            "icon_url": None,
+            "name": None,
+        }
 
     @classmethod
     def from_json(cls, data: dict):
         return Embed(
             title = data.get("title"),
             description = data.get("description"),
-            footer = data.get("footer")
+            footer = data.get("footer"),
+            color = data.get("color"),
+            image_url = data.get("imageUrl"),
+            thumbnail_url = data.get("thumbnailUrl")
         )
 
     def __str__(self) -> str:
@@ -25,11 +35,20 @@ class Embed:
     def __repr__(self) -> str:
         return f'<Embed title = "{self.title}", description = "{self.description}">'
 
+    def set_author(self, name, icon_url):
+        self.author["name"] = name
+        self.author["icon_url"] = icon_url
+        return self
+
     def to_dict(self) -> dict:
         return {
             "title": self.title,
             "description": self.description,
             "footer": self.footer,
+            "color": self.color,
+            "imageUrl": self.thumbnail_url,
+            "thumbnailUrl": self.image_url,
+            "author" : self.author
         }
 
 
@@ -130,7 +149,6 @@ class Channel:
             data = await resp.json()
         
         return Message.from_json(self.client, data)
-
 
 
 
