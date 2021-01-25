@@ -9,25 +9,25 @@ veld.chat is an up and coming next-gen totally cool social platform and I decide
 import veld
 
 
-veld = veld.VeldChatClient("TOKEN")
+client = veld.VeldChatClient("TOKEN")
 
 
-@veld.event()
+@client.event()
 async def on_message(message):
     args = message.content.split()
     if message.content.startswith("?"):
         if args[0] == "?say":
             await message.channel.send(" ".join(args[1:]))
         elif args[0] == "?ping":
-            await message.channel.send(f"You want my ping??? Here it is then: `{veld.ping}ms`")
+            await message.channel.send(f"You want my ping??? Here it is then: `{client.ping}ms`")
         elif args[0] == "?users":
-            users = "`\n`".join([repr(veld.users[u_id]) for u_id in veld.users])
+            users = "`\n`".join([repr(client.users[u_id]) for u_id in client.users])
             await message.channel.send(f"`{users}`")
 
-@veld.event()
+@client.event()
 async def on_user_update(old, new):
     print(f"{repr(old)} -> {repr(new)}")
 
 
-veld.run()```
+client.run()```
 
