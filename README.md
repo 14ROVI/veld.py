@@ -14,16 +14,20 @@ client = veld.VeldChatClient("TOKEN")
 
 @client.event()
 async def on_message(message):
-    args = message.content.split()
     if message.content.startswith("?"):
+        args = message.content.split()
+        
         if args[0] == "?say":
             await message.channel.send(" ".join(args[1:]))
+            
         elif args[0] == "?ping":
             await message.channel.send(f"You want my ping??? Here it is then: `{client.ping}ms`")
+            
         elif args[0] == "?users":
-            users = "`\n`".join([repr(client.users[u_id]) for u_id in client.users])
+            users = "`\n`".join([repr(u) for u in client.users])
             await message.channel.send(f"`{users}`")
-
+           
+           
 @client.event()
 async def on_user_update(old, new):
     print(f"{repr(old)} -> {repr(new)}")
