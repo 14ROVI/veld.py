@@ -20,7 +20,7 @@ async def on_message(message):
         
         if args[0] == "?say":
             await message.channel.send(
-                embed = Embed(
+                embed = veld.Embed(
                     title = f"{message.author} told me to say:",
                     description = " ".join(args[1:]),
                     footer = "I am not liable for what they said!"

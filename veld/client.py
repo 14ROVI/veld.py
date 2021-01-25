@@ -11,6 +11,14 @@ class Embed:
         self.description = description
         self.footer = footer
 
+    @classmethod
+    def from_json(cls, data: dict):
+        return Embed(
+            title = data.get("title"),
+            description = data.get("description"),
+            footer = data.get("footer")
+        )
+
     def __str__(self) -> str:
         return str(self.to_dict())
 
@@ -54,6 +62,37 @@ class User:
 
 
 
+class Message:
+    def __init__(self, id, content, embed, created_at, channel, author):
+        self.id = id
+        self.content = content
+        self.embed = embed
+        self.created_at = created_at
+        self.channel = channel
+        self.author = author
+
+    @classmethod
+    def from_json(cls, client, data):
+        author = client.get_user(int(data["author"]["id"]))
+        channel = client.get_channel(int(data["channelId"]))
+        embed = Embed.from_json(data["embed"]) if data["embed"] else None
+        return Message(
+            int(data["id"]),
+            data["content"],
+            embed,
+            parser.parse(data["timestamp"]),
+            channel,
+            author
+        )
+
+    def __str__(self) -> str:
+        return self.content or ""
+
+    def __repr__(self) -> str:
+        return f'<Message id = {self.id}, author = "{self.author.name}", channel = "{self.channel.name}">'
+
+
+
 class Channel:
     def __init__(self, client, id, name, type, members, messages):
         self.client = client
@@ -80,43 +119,18 @@ class Channel:
     def __repr__(self) -> str:
         return f'<Channel id = {self.id}, name = "{self.name}">'
 
-    async def send(self, content: str = None, embed: Embed = None) -> None:
+    async def send(self, content: str = None, embed: Embed = None) -> Message:
         embed = None if embed is None else embed.to_dict()
-        await self.client.session.post(
+        
+        async with self.client.session.post(
             f"https://api.veld.chat/channels/{self.id}/messages",
             json = {"content": content, "embed": embed},
             headers = {"authorization": f"Bearer {self.client.token}"}
-        )
+        ) as resp:
+            data = await resp.json()
+        
+        return Message.from_json(self.client, data)
 
-
-
-class Message:
-    def __init__(self, id, content, embed, created_at, channel, author):
-        self.id = id
-        self.content = content
-        self.embed = embed
-        self.created_at = created_at
-        self.channel = channel
-        self.author = author
-
-    @classmethod
-    def from_json(cls, client, data):
-        author = client.get_user(int(data["author"]["id"]))
-        channel = client.get_channel(int(data["channelId"]))
-        return Message(
-            int(data["id"]),
-            data["content"],
-            data["embed"],
-            parser.parse(data["timestamp"]),
-            channel,
-            author
-        )
-
-    def __str__(self) -> str:
-        return self.content
-
-    def __repr__(self) -> str:
-        return f'<Message id = {self.id}, author = "{self.author.name}", channel = "{self.channel.name}">'
 
 
 
