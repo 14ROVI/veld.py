@@ -80,7 +80,7 @@ class Channel:
     def __repr__(self) -> str:
         return f'<Channel id = {self.id}, name = "{self.name}">'
 
-    async def send(self, content=None, embed: Embed = None):
+    async def send(self, content: str = None, embed: Embed = None) -> None:
         embed = None if embed is None else embed.to_dict()
         await self.client.session.post(
             f"https://api.veld.chat/channels/{self.id}/messages",
