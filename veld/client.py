@@ -45,9 +45,9 @@ class Embed:
             "title": self.title,
             "description": self.description,
             "footer": self.footer,
-            "color": self.color,
-            "imageUrl": self.thumbnail_url,
-            "thumbnailUrl": self.image_url,
+            "color": self.color or self.colour,
+            "imageUrl": self.image_url,
+            "thumbnailUrl": self.thumbnail_url,
             "author" : self.author
         }
 
