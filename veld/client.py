@@ -6,12 +6,14 @@ import time
 
 
 class User:
-    def __init__(self, id, name, avatar_url, bot, badges):
+    def __init__(self, id, name, avatar_url, bot, badges, online=None, status=None):
         self.id = id
         self.name = name
         self.avatar_url = avatar_url
         self.bot = bot
         self.badges = badges
+        self.online = online # true, false, none for unknown
+        self.status = status
 
     @classmethod
     def from_json(cls, data):
@@ -77,8 +79,8 @@ class Message:
 
     @classmethod
     def from_json(cls, client, data):
-        author = client.users.get(int(data["author"]["id"]))
-        channel = client.channels.get(int(data["channelId"]))
+        author = client.get_user(int(data["author"]["id"]))
+        channel = client.get_channel(int(data["channelId"]))
         return Message(
             int(data["id"]),
             data["content"],
@@ -102,8 +104,8 @@ class VeldChatClient:
         self.session = None
         self.ping = None
         self.user = None
-        self.channels = {}
-        self.users = {}
+        self._channels = {}
+        self._users = {}
         self.events = {}
 
 
@@ -137,9 +139,12 @@ class VeldChatClient:
             self.ping = int((time.time() - self.ping)*1000)
             data = msg.json()
             self.user = User.from_json(data["d"]["user"])
-            self.channels = {int(c["id"]): Channel.from_json(self, c) for c in data["d"]["channels"]}
-            self.users = {int(u["id"]): User.from_json(u) for u in data["d"]["users"]}
-            self.users[self.user.id] = self.user
+            self.user.online = True
+            self._channels = {int(c["id"]): Channel.from_json(self, c) for c in data["d"]["channels"]}
+            self._users = {int(u["id"]): User.from_json(u) for u in data["d"]["users"]}
+            self._users[self.user.id] = self.user
+            for u in self.users:
+                u.online = True
 
             async for msg in ws:
                 if msg.type == aiohttp.WSMsgType.PONG:
@@ -149,7 +154,7 @@ class VeldChatClient:
                 elif msg.type == aiohttp.WSMsgType.TEXT:
                     data = msg.json()
                     if data["t"] == 12:
-                        await self.on_raw_user_update(data["d"]["user"])
+                        await self.on_raw_user_update(data["d"]["user"], data["d"]["statusText"], data["d"]["statusType"])
                     elif data["t"] == 2:
                         await self.on_raw_message(data["d"])
                     elif data["t"] == 8:
@@ -165,10 +170,21 @@ class VeldChatClient:
         return registerhandler
 
 
-    async def on_raw_user_update(self, data):
-        old_user = self.users.get(int(data["id"]))
+    async def on_raw_user_update(self, data, status_text=None, status_type=None):
+        old_user = self._users.get(int(data["id"]))
         new_user = User.from_json(data)
-        self.users[new_user.id] = new_user
+
+        if status_type is not None:
+            new_user.online = not bool(status_type)
+        elif old_user is not None:
+            new_user.online = old_user.online
+
+        if status_text is not None:
+            new_user.status = status_text
+        elif old_user is not None:
+            new_user.status = old_user.status
+
+        self._users[new_user.id] = new_user
 
         if "on_user_update" in self.events:
             await self.events["on_user_update"](old_user, new_user)
@@ -178,3 +194,28 @@ class VeldChatClient:
         message = Message.from_json(self, data)
         if "on_message" in self.events:
             await self.events["on_message"](message)
+
+
+    @property
+    def users(self):
+        return self._users.values()
+
+    
+    def get_user(self, user_id: int):
+        return self._users.get(user_id)
+
+
+    @property
+    def channels(self):
+        return self._channels.values()
+
+    
+    def get_channel(self, channel_id: int):
+        return self._channels.get(channel_id)
+
+
+
+
+
+
+
