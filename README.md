@@ -8,6 +8,7 @@ veld.chat is an up and coming next-gen totally cool social platform and I decide
 ```py
 import veld
 
+
 veld = veld.VeldChatClient("TOKEN")
 
 
