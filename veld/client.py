@@ -69,7 +69,7 @@ class User:
             int(data["id"]),
             data["name"],
             data["avatarUrl"],
-            data["isBot"],
+            (data["badges"] & 1<<2) == 1<<2,
             data["badges"]
         )
     
@@ -77,7 +77,7 @@ class User:
         return self.name
 
     def __repr__(self) -> str:
-        return f'<User id = {self.id}, name = "{self.name}">'
+        return f'<User id = {self.id}, name = "{self.name}", online = "{self.online}">'
 
 
 
@@ -146,7 +146,10 @@ class Channel:
             json = {"content": content, "embed": embed},
             headers = {"authorization": f"Bearer {self.client.token}"}
         ) as resp:
-            data = await resp.json()
+            if resp.status == 200:
+                data = await resp.json()
+            else:
+                raise Exception("Unable to post message")
         
         return Message.from_json(self.client, data)
 
@@ -164,6 +167,7 @@ class VeldChatClient:
 
 
     def run(self):
+        self.start_time = time.time()
         asyncio.run(self.ws_events())
     
 
@@ -182,8 +186,7 @@ class VeldChatClient:
             await ws.send_json({
                 "t": 0,
                 "d": {
-                    "token": self.token,
-                    "bot": True
+                    "token": self.token
                 }
             })
 
@@ -251,7 +254,7 @@ class VeldChatClient:
 
 
     @property
-    def users(self):
+    def users(self) -> list:
         return self._users.values()
 
     
@@ -260,13 +263,17 @@ class VeldChatClient:
 
 
     @property
-    def channels(self):
+    def channels(self) -> list:
         return self._channels.values()
 
     
     def get_channel(self, channel_id: int):
         return self._channels.get(channel_id)
 
+
+    @property
+    def up_time(self) -> int:
+        return int(time.time()-self.start_time)
 
 
 
