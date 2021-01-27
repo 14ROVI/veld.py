@@ -33,7 +33,7 @@ class Embed:
         return str(self.to_dict())
 
     def __repr__(self) -> str:
-        return f'<Embed title = "{self.title}", description = "{self.description}">'
+        return f'<Embed title="{self.title}" description="{self.description}">'
 
     def set_author(self, name, icon_url):
         self.author["name"] = name
@@ -77,14 +77,14 @@ class User:
         return self.name
 
     def __repr__(self) -> str:
-        return f'<User id = {self.id}, name = "{self.name}", online = "{self.online}">'
+        return f'<User id={self.id} name="{self.name}" online={self.online}>'
 
 
 
 class Message:
     def __init__(self, id, content, embed, created_at, channel, author):
         self.id = id
-        self.content = content
+        self.content = content or ""
         self.embed = embed
         self.created_at = created_at
         self.channel = channel
@@ -105,10 +105,10 @@ class Message:
         )
 
     def __str__(self) -> str:
-        return self.content or ""
+        return self.content
 
     def __repr__(self) -> str:
-        return f'<Message id = {self.id}, author = "{self.author.name}", channel = "{self.channel.name}">'
+        return f"""<Message id={self.id} author="{self.author}" channel="{self.channel.name}" content="{self.content[:75] + (self.content[75:] and '...')}">"""
 
 
 
@@ -136,7 +136,7 @@ class Channel:
         return self.name
 
     def __repr__(self) -> str:
-        return f'<Channel id = {self.id}, name = "{self.name}">'
+        return f'<Channel id={self.id} name="{self.name}">'
 
     async def send(self, content: str = None, embed: Embed = None) -> Message:
         embed = None if embed is None else embed.to_dict()
