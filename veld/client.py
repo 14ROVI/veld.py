@@ -57,7 +57,10 @@ class User:
     def __init__(self, id, name, avatar_url, bot, badges, online=None, status=None):
         self.id = id
         self.name = name
-        self.avatar_url = avatar_url
+        if avatar_url:
+            self.avatar_url = f"https://cdn.miki.bot/chat/avatars/{avatar_url}.png"
+        else:
+            self.avatar_url = f"https://cdn.miki.bot/chat/avatars/{self.id%5}.png"
         self.bot = bot
         self.badges = badges
         self.online = online # true, false, none for unknown
@@ -108,7 +111,7 @@ class Message:
         return self.content
 
     def __repr__(self) -> str:
-        return f"""<Message id={self.id} author="{self.author}" channel="{self.channel.name}" content="{self.content[:75] + (self.content[75:] and '...')}">"""
+        return f'<Message id={self.id} author={repr(self.author)} channel={repr(self.channel)}>'
 
 
 
@@ -156,7 +159,7 @@ class Channel:
 
 
 class VeldChatClient:
-    def __init__(self, token: str):
+    def __init__(self, token: str, max_messages: int = 500):
         self.token = token
         self.session = None
         self.ping = None
@@ -164,6 +167,8 @@ class VeldChatClient:
         self._channels = {}
         self._users = {}
         self.events = {}
+        self.cached_messages = []
+        self.max_messages = max(max_messages, 0)
 
 
     def run(self):
@@ -174,7 +179,7 @@ class VeldChatClient:
     async def heartbeat(self):
         while 1:
             await asyncio.sleep(15)
-            self.ping = time.time()
+            self._ping_counter = time.time()
             await self.ws.ping()
 
 
@@ -182,7 +187,7 @@ class VeldChatClient:
         self.session = aiohttp.ClientSession()
         async with self.session.ws_connect("wss://api.veld.chat", autoping=False) as ws:
             self.ws = ws
-            self.ping = time.time()
+            self._ping_counter = time.time()
             await ws.send_json({
                 "t": 0,
                 "d": {
@@ -193,7 +198,7 @@ class VeldChatClient:
             asyncio.create_task(self.heartbeat())
 
             msg = await ws.receive()
-            self.ping = int((time.time() - self.ping)*1000)
+            self.ping = int((time.time() - self._ping_counter)*1000)
             data = msg.json()
             self.user = User.from_json(data["d"]["user"])
             self.user.online = True
@@ -205,7 +210,7 @@ class VeldChatClient:
 
             async for msg in ws:
                 if msg.type == aiohttp.WSMsgType.PONG:
-                    self.ping = int((time.time() - self.ping)*1000)
+                    self.ping = int((time.time() - self._ping_counter)*1000)
                     continue
 
                 elif msg.type == aiohttp.WSMsgType.TEXT:
@@ -249,6 +254,9 @@ class VeldChatClient:
 
     async def on_raw_message(self, data):
         message = Message.from_json(self, data)
+        self.cached_messages.append(message)
+        if len(self.cached_messages) > self.max_messages:
+            del self.cached_messages[0]
         if "on_message" in self.events:
             await self.events["on_message"](message)
 
