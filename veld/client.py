@@ -82,6 +82,12 @@ class User:
     def __repr__(self) -> str:
         return f'<User id={self.id} name="{self.name}" online={self.online}>'
 
+    def __eq__(self, other) -> bool:
+        if isinstance(other, User):
+            if self.id == other.id:
+                return True
+        return False
+
 
 
 class Message:
