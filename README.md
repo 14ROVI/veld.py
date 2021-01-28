@@ -40,5 +40,5 @@ async def on_user_update(old, new):
     print(f"{repr(old)} -> {repr(new)}")
 
 
-client.run()```
-
+client.run()
+```
