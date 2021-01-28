@@ -228,7 +228,7 @@ class VeldChatClient:
                     elif data["t"] == 8:
                         await self.on_raw_user_update(data["d"])
                     else:
-                        print(data)
+                        print(f'NEW T: {data["t"]}')
                     
 
     def event(self):
@@ -239,6 +239,8 @@ class VeldChatClient:
 
 
     async def on_raw_user_update(self, data, status_text=None, status_type=None):
+        if data is None:
+            return
         old_user = self._users.get(int(data["id"]))
         new_user = User.from_json(data)
 
